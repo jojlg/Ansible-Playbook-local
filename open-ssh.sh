@@ -19,7 +19,7 @@ echo "Création de la bannière SSH..."
 cat << 'EOF' > /etc/ssh/banner
 ********************************************************
 *                 AVERTISSEMENT                        *
-********************************************************
+https://192.168.1.98***********************************************
 *  Cette connexion est la propriété de la société X.   *
 *  L'accès est autorisé uniquement aux utilisateurs    *
 *  autorisés. Toute autre tentative constitue une      *
