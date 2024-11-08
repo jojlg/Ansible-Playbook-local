@@ -1,0 +1,35 @@
+---
+- name: Désactiver la connexion root via SSH
+  hosts: localhost
+  become: yes
+  tasks:
+    - name: Vérifier si le fichier de configuration SSH existe
+      stat:
+        path: /etc/ssh/sshd_config
+      register: ssh_config
+
+    - name: Échouer si le fichier de configuration SSH est introuvable
+      fail:
+        msg: "Le fichier de configuration /etc/ssh/sshd_config est introuvable."
+      when: not ssh_config.stat.exists
+
+    - name: Désactiver la connexion root via SSH
+      lineinfile:
+        path: /etc/ssh/sshd_config
+        regexp: '^#?PermitRootLogin'
+        line: 'PermitRootLogin no'
+        state: present
+
+    - name: Redémarrer le service SSH pour appliquer les changements
+      systemd:
+        name: ssh
+        state: restarted
+      ignore_errors: yes
+
+    - name: Vérifier le redémarrage du service SSH
+      systemd:
+        name: ssh
+        state: restarted
+      register: ssh_restart
+      failed_when: ssh_restart.failed
+      ignore_errors: no

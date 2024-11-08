@@ -1,0 +1,68 @@
+---
+- name: Mise à jour des paquets et installation de fail2ban
+  hosts: localhost
+  become: yes
+  tasks:
+    - name: Mise à jour des paquets système
+      apt:
+        update_cache: yes
+        upgrade: dist
+
+    - name: Installation de fail2ban
+      apt:
+        name: fail2ban
+        state: present
+
+    - name: Démarrer et activer le service fail2ban
+      systemd:
+        name: fail2ban
+        state: started
+        enabled: yes
+
+    - name: Vérifier que fail2ban est en cours d'exécution
+      command: systemctl is-active --quiet fail2ban
+      register: fail2ban_status
+      failed_when: fail2ban_status.rc != 0
+      changed_when: false
+
+    - name: Copier le fichier de configuration fail2ban
+      copy:
+        src: /etc/fail2ban/jail.conf
+        dest: /etc/fail2ban/jail.local
+        remote_src: yes
+
+    - name: Modifier les paramètres de sécurité dans fail2ban
+      lineinfile:
+        path: /etc/fail2ban/jail.local
+        regexp: '^#?(ignoreip|bantime|maxretry|findtime|enabled)'
+        line: |
+          ignoreip = 127.0.0.1
+          bantime = 3600
+          maxretry = 5
+          findtime = 600
+          enabled = true
+        state: present
+        create: yes
+
+    - name: Redémarrer fail2ban pour appliquer les changements
+      systemd:
+        name: fail2ban
+        state: restarted
+
+    - name: Vérifier l'état de fail2ban
+      command: fail2ban-client status
+      register: fail2ban_status_output
+      changed_when: false
+
+    - name: Afficher les règles en cours dans fail2ban
+      command: fail2ban-client status sshd
+      register: fail2ban_sshd_status
+      changed_when: false
+
+    - name: Afficher le statut de fail2ban
+      debug:
+        msg: "{{ fail2ban_status_output.stdout }}"
+
+    - name: Afficher les règles de fail2ban pour sshd
+      debug:
+        msg: "{{ fail2ban_sshd_status.stdout }}"
