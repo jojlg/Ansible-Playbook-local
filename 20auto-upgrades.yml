@@ -1,0 +1,27 @@
+---
+- name: Renforcer la sécurité avec des mises à jour automatiques
+  hosts: localhost
+  become: yes
+  tasks:
+    - name: Configurer les mises à jour automatiques
+      copy:
+        dest: /etc/apt/apt.conf.d/20auto-upgrades
+        content: |
+          // Activer les mises à jour automatiques de sécurité
+          APT::Periodic::Unattended-Upgrade "1";
+          // Télécharger automatiquement les paquets disponibles pour mise à jour
+          APT::Periodic::Download-Upgradeable-Packages "1";
+          // Nettoyer automatiquement les paquets obsolètes à intervalle
+          APT::Periodic::AutocleanInterval "7";
+          // Mettre à jour la liste des paquets
+          APT::Periodic::Update-Package-Lists "1";
+
+    - name: Redémarrer le timer apt-daily
+      systemd:
+        name: apt-daily.timer
+        state: restarted
+
+    - name: Redémarrer le timer apt-daily-upgrade
+      systemd:
+        name: apt-daily-upgrade.timer
+        state: restarted
